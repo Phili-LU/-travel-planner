@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>旅途 Tabivibe — 行程規劃</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════ -->
+<!-- SCREEN: HOME (行程列表)               -->
+<!-- ══════════════════════════════════════ -->
+<div id="screen-home" class="screen active">
+  <header class="home-header">
+    <div class="home-header-inner">
+      <h1 class="app-logo">✈️ 旅途</h1>
+      <p class="app-tagline">記錄每一段旅程</p>
+    </div>
+  </header>
+
+  <div class="home-body">
+    <!-- 空狀態 -->
+    <div id="empty-trips" class="empty-state" style="display:none">
+      <div class="empty-icon">🗺️</div>
+      <p>還沒有旅程</p>
+      <p class="empty-sub">點下方按鈕建立你的第一趟旅行</p>
+    </div>
+
+    <!-- 行程列表 -->
+    <div id="trip-list" class="trip-list"></div>
+  </div>
+
+  <button class="fab" onclick="openNewTripModal()">＋ 新增旅程</button>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- SCREEN: TRIP DETAIL                   -->
+<!-- ══════════════════════════════════════ -->
+<div id="screen-trip" class="screen">
+  <!-- 頂部 -->
+  <header class="trip-header" id="trip-header">
+    <div class="trip-header-inner">
+      <button class="back-btn" onclick="goHome()">←</button>
+      <div class="trip-header-text">
+        <h2 id="trip-title">旅程名稱</h2>
+        <p  id="trip-meta">日期 · N 天</p>
+      </div>
+      <button class="icon-btn" onclick="openEditTripModal()">⚙️</button>
+    </div>
+
+    <!-- 預算列 -->
+    <div class="budget-bar" id="budget-bar">
+      <div class="budget-bar-inner">
+        <div class="budget-labels">
+          <span class="budget-label-actual" id="budget-actual-label">實際 <strong id="budget-actual">¥0</strong></span>
+          <span class="budget-label-plan"   id="budget-plan-label">預估 <strong id="budget-planned">¥0</strong></span>
+          <span class="budget-label-total">預算 <strong id="budget-total">¥0</strong></span>
+        </div>
+        <div class="budget-tracks">
+          <div class="budget-track-bg">
+            <div class="budget-fill-planned" id="budget-fill-planned" style="width:0%"></div>
+            <div class="budget-fill-actual"  id="budget-fill-actual"  style="width:0%"></div>
+          </div>
+        </div>
+        <div class="budget-status" id="budget-status"></div>
+      </div>
+    </div>
+
+    <!-- 日期 Tabs -->
+    <div class="day-tabs" id="day-tabs"></div>
+  </header>
+
+  <!-- 活動時間軸 -->
+  <main class="trip-body" id="trip-body">
+    <div id="activity-list" class="activity-list"></div>
+    <button class="add-activity-btn" onclick="openAddActivityModal()">＋ 新增活動</button>
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- MODAL: 新增 / 編輯 行程               -->
+<!-- ══════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="trip-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="trip-modal-title">新增旅程</h3>
+      <button class="modal-close" onclick="closeTripModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <label class="form-label">旅程名稱 <span class="req">*</span></label>
+      <input type="text" id="trip-name" class="form-input" placeholder="例：日本關東 2026">
+
+      <label class="form-label">目的地</label>
+      <div class="country-grid" id="country-grid">
+        <button class="country-btn" data-emoji="🇯🇵" data-name="日本"   onclick="pickCountry(this)">🇯🇵<span>日本</span></button>
+        <button class="country-btn" data-emoji="🇰🇷" data-name="韓國"   onclick="pickCountry(this)">🇰🇷<span>韓國</span></button>
+        <button class="country-btn" data-emoji="🇹🇭" data-name="泰國"   onclick="pickCountry(this)">🇹🇭<span>泰國</span></button>
+        <button class="country-btn" data-emoji="🇸🇬" data-name="新加坡" onclick="pickCountry(this)">🇸🇬<span>新加坡</span></button>
+        <button class="country-btn" data-emoji="🇭🇰" data-name="香港"   onclick="pickCountry(this)">🇭🇰<span>香港</span></button>
+        <button class="country-btn" data-emoji="🇲🇴" data-name="澳門"   onclick="pickCountry(this)">🇲🇴<span>澳門</span></button>
+        <button class="country-btn" data-emoji="🇨🇳" data-name="中國"   onclick="pickCountry(this)">🇨🇳<span>中國</span></button>
+        <button class="country-btn" data-emoji="🇺🇸" data-name="美國"   onclick="pickCountry(this)">🇺🇸<span>美國</span></button>
+        <button class="country-btn" data-emoji="🇬🇧" data-name="英國"   onclick="pickCountry(this)">🇬🇧<span>英國</span></button>
+        <button class="country-btn" data-emoji="🇫🇷" data-name="法國"   onclick="pickCountry(this)">🇫🇷<span>法國</span></button>
+        <button class="country-btn" data-emoji="🇩🇪" data-name="德國"   onclick="pickCountry(this)">🇩🇪<span>德國</span></button>
+        <button class="country-btn" data-emoji="🇮🇹" data-name="義大利" onclick="pickCountry(this)">🇮🇹<span>義大利</span></button>
+        <button class="country-btn" data-emoji="🇪🇸" data-name="西班牙" onclick="pickCountry(this)">🇪🇸<span>西班牙</span></button>
+        <button class="country-btn" data-emoji="🇦🇺" data-name="澳洲"   onclick="pickCountry(this)">🇦🇺<span>澳洲</span></button>
+        <button class="country-btn" data-emoji="🇨🇦" data-name="加拿大" onclick="pickCountry(this)">🇨🇦<span>加拿大</span></button>
+        <button class="country-btn" data-emoji="🇳🇿" data-name="紐西蘭" onclick="pickCountry(this)">🇳🇿<span>紐西蘭</span></button>
+        <button class="country-btn" data-emoji="🇲🇾" data-name="馬來西亞" onclick="pickCountry(this)">🇲🇾<span>馬來西亞</span></button>
+        <button class="country-btn" data-emoji="🇻🇳" data-name="越南"   onclick="pickCountry(this)">🇻🇳<span>越南</span></button>
+        <button class="country-btn" data-emoji="🇮🇩" data-name="印尼"   onclick="pickCountry(this)">🇮🇩<span>印尼</span></button>
+        <button class="country-btn" data-emoji="🇵🇭" data-name="菲律賓" onclick="pickCountry(this)">🇵🇭<span>菲律賓</span></button>
+        <button class="country-btn" data-emoji="🇮🇳" data-name="印度"   onclick="pickCountry(this)">🇮🇳<span>印度</span></button>
+        <button class="country-btn" data-emoji="🇹🇷" data-name="土耳其" onclick="pickCountry(this)">🇹🇷<span>土耳其</span></button>
+        <button class="country-btn" data-emoji="🇬🇷" data-name="希臘"   onclick="pickCountry(this)">🇬🇷<span>希臘</span></button>
+        <button class="country-btn" data-emoji="🇵🇹" data-name="葡萄牙" onclick="pickCountry(this)">🇵🇹<span>葡萄牙</span></button>
+        <button class="country-btn" data-emoji="✈️"  data-name=""       onclick="pickCountry(this)">✈️<span>其他</span></button>
+      </div>
+      <input type="hidden" id="trip-emoji">
+      <input type="hidden" id="trip-dest">
+
+      <label class="form-label">出發日期 <span class="req">*</span></label>
+      <input type="date" id="trip-start" class="form-input">
+
+      <label class="form-label">天數 <span class="req">*</span></label>
+      <div class="days-row">
+        <button class="days-btn" onclick="adjustDays(-1)">−</button>
+        <span id="days-display" class="days-display">7</span>
+        <button class="days-btn" onclick="adjustDays(1)">＋</button>
+        <span class="days-label">天</span>
+      </div>
+
+      <label class="form-label">總預算（可選）</label>
+      <div class="budget-input-row">
+        <select id="trip-currency" class="form-select">
+          <option value="JPY">¥ 日幣</option>
+          <option value="TWD">NT$ 台幣</option>
+          <option value="CNY">¥ 人民幣</option>
+          <option value="USD">$ 美金</option>
+          <option value="KRW">₩ 韓幣</option>
+          <option value="EUR">€ 歐元</option>
+          <option value="HKD">HK$ 港幣</option>
+          <option value="SGD">S$ 新幣</option>
+          <option value="THB">฿ 泰銖</option>
+        </select>
+        <input type="number" id="trip-budget" class="form-input" placeholder="0">
+      </div>
+
+      <div id="trip-modal-err" class="form-error" style="display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" id="delete-trip-btn" onclick="deleteCurrentTrip()" style="display:none; color:var(--red)">刪除行程</button>
+      <button class="btn-primary" onclick="saveTripModal()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- MODAL: 新增 / 編輯 活動               -->
+<!-- ══════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="activity-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="act-modal-title">新增活動</h3>
+      <button class="modal-close" onclick="closeActivityModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- 分類選擇 -->
+      <label class="form-label">分類</label>
+      <div class="cat-picker" id="cat-picker">
+        <button class="cat-btn active" data-cat="sight"     onclick="pickCat(this)">🗺️ 景點</button>
+        <button class="cat-btn"        data-cat="food"      onclick="pickCat(this)">🍜 美食</button>
+        <button class="cat-btn"        data-cat="transport" onclick="pickCat(this)">🚆 交通</button>
+        <button class="cat-btn"        data-cat="hotel"     onclick="pickCat(this)">🏨 住宿</button>
+        <button class="cat-btn"        data-cat="shop"      onclick="pickCat(this)">🛍️ 購物</button>
+        <button class="cat-btn"        data-cat="other"     onclick="pickCat(this)">📌 其他</button>
+      </div>
+
+      <label class="form-label">活動名稱 <span class="req">*</span></label>
+      <input type="text" id="act-name" class="form-input" placeholder="例：淺草寺">
+
+      <div class="two-col">
+        <div>
+          <label class="form-label">時間</label>
+          <input type="time" id="act-time" class="form-input">
+        </div>
+        <div>
+          <label class="form-label">預估費用</label>
+          <input type="number" id="act-cost" class="form-input" placeholder="0">
+        </div>
+      </div>
+
+      <label class="form-label">
+        實際花費
+        <span style="font-weight:400; color:var(--text-3)">（回來後填，空白 = 尚未記帳）</span>
+      </label>
+      <input type="number" id="act-actual" class="form-input" placeholder="留空 = 尚未花費">
+
+      <label class="form-label">地點 / 地址</label>
+      <input type="text" id="act-location" class="form-input" placeholder="例：東京都台東區">
+
+      <label class="form-label">Google Maps 連結</label>
+      <input type="url" id="act-maps" class="form-input" placeholder="https://maps.google.com/...">
+
+      <label class="form-label">備註</label>
+      <textarea id="act-notes" class="form-textarea" placeholder="預訂資訊、注意事項…" rows="3"></textarea>
+
+      <div id="act-modal-err" class="form-error" style="display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" id="delete-act-btn" onclick="deleteActivity()" style="display:none; color:var(--red)">刪除</button>
+      <button class="btn-primary" onclick="saveActivityModal()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
