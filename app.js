@@ -489,6 +489,79 @@ document.getElementById('activity-modal').addEventListener('click', function(e) 
   if (e.target === this) closeActivityModal();
 });
 
+// ── 分享功能（URL hash 編碼）────────────────────────
+
+function encodeTrip(trip) {
+  return btoa(encodeURIComponent(JSON.stringify(trip)));
+}
+
+function decodeTrip(encoded) {
+  return JSON.parse(decodeURIComponent(atob(encoded)));
+}
+
+function shareTrip() {
+  if (!currentTrip) return;
+  const encoded = encodeTrip(currentTrip);
+  const url = `${location.origin}${location.pathname}#share=${encoded}`;
+
+  navigator.clipboard.writeText(url).then(() => {
+    showToast('🔗 連結已複製！傳給朋友吧');
+  }).catch(() => {
+    prompt('複製這個連結分享給朋友：', url);
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('share-toast');
+  t.textContent = msg;
+  t.classList.remove('hidden');
+  setTimeout(() => t.classList.add('hidden'), 3000);
+}
+
+let sharedTripData = null;
+
+function checkShareHash() {
+  const hash = location.hash;
+  if (!hash.startsWith('#share=')) return;
+
+  try {
+    sharedTripData = decodeTrip(hash.slice('#share='.length));
+  } catch {
+    return;
+  }
+
+  // 顯示分享的行程
+  currentTrip = sharedTripData;
+  currentDay  = 1;
+  showScreen('screen-trip');
+  renderTripDetail();
+
+  // 底部 Banner
+  document.getElementById('share-banner-name').textContent =
+    `${sharedTripData.emoji || '✈️'} ${sharedTripData.name}`;
+  document.getElementById('share-banner').classList.remove('hidden');
+
+  history.replaceState(null, '', location.pathname);
+}
+
+function saveSharedTrip() {
+  if (!sharedTripData) return;
+  if (trips.find(t => t.id === sharedTripData.id)) {
+    showToast('✅ 這個行程你已經存過了！');
+    closeShareBanner();
+    return;
+  }
+  trips.unshift({ ...sharedTripData, id: genId() });
+  saveTrips();
+  closeShareBanner();
+  showToast('✅ 已儲存到你的行程！');
+}
+
+function closeShareBanner() {
+  document.getElementById('share-banner').classList.add('hidden');
+  sharedTripData = null;
+}
+
 // ── Init ─────────────────────────────────────────
 loadTrips();
 
@@ -519,3 +592,4 @@ if (!trips.length) {
 }
 
 renderHome();
+checkShareHash();

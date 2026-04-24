@@ -49,6 +49,7 @@
         <h2 id="trip-title">旅程名稱</h2>
         <p  id="trip-meta">日期 · N 天</p>
       </div>
+      <button class="icon-btn" onclick="shareTrip()" title="分享行程">🔗</button>
       <button class="icon-btn" onclick="openEditTripModal()">⚙️</button>
     </div>
 
@@ -219,6 +220,23 @@
     </div>
   </div>
 </div>
+
+<!-- 分享行程 Banner（朋友打開時顯示） -->
+<div id="share-banner" class="share-banner hidden">
+  <div class="share-banner-inner">
+    <div class="share-banner-text">
+      <span id="share-banner-label">✈️ 朋友分享的行程</span>
+      <span id="share-banner-name"></span>
+    </div>
+    <div class="share-banner-actions">
+      <button class="share-save-btn" onclick="saveSharedTrip()">💾 儲存到我的行程</button>
+      <button class="share-close-btn" onclick="closeShareBanner()">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- 分享成功 Toast -->
+<div id="share-toast" class="share-toast hidden">🔗 連結已複製！傳給朋友吧</div>
 
 <script src="app.js"></script>
 </body>
