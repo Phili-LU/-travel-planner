@@ -489,26 +489,43 @@ document.getElementById('activity-modal').addEventListener('click', function(e) 
   if (e.target === this) closeActivityModal();
 });
 
-// ── 分享功能（URL hash 編碼）────────────────────────
+// ── 分享功能（JSONBin.io 短連結）───────────────────
 
-function encodeTrip(trip) {
-  return btoa(encodeURIComponent(JSON.stringify(trip)));
-}
+const JSONBIN_KEY = '$2a$10$C7w3iZB7RaHtSqIB0ncK.u24GBTPHC0MCX0beBpqjssY9aeE.1.Qi';
+const JSONBIN_URL = 'https://api.jsonbin.io/v3/b';
 
-function decodeTrip(encoded) {
-  return JSON.parse(decodeURIComponent(atob(encoded)));
-}
-
-function shareTrip() {
+async function shareTrip() {
   if (!currentTrip) return;
-  const encoded = encodeTrip(currentTrip);
-  const url = `${location.origin}${location.pathname}#share=${encoded}`;
 
-  navigator.clipboard.writeText(url).then(() => {
-    showToast('🔗 連結已複製！傳給朋友吧');
-  }).catch(() => {
-    prompt('複製這個連結分享給朋友：', url);
-  });
+  const shareBtn = document.querySelector('.icon-btn[onclick="shareTrip()"]');
+  if (shareBtn) shareBtn.textContent = '⏳';
+
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': JSONBIN_KEY,
+        'X-Bin-Private': 'false',
+      },
+      body: JSON.stringify(currentTrip),
+    });
+
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    const binId = data.metadata.id;
+
+    const url = `${location.origin}${location.pathname}?trip=${binId}`;
+    navigator.clipboard.writeText(url).then(() => {
+      showToast('🔗 連結已複製！傳給朋友吧');
+    }).catch(() => {
+      prompt('複製這個連結分享給朋友：', url);
+    });
+  } catch (e) {
+    showToast('⚠️ 分享失敗，請稍後再試');
+  } finally {
+    if (shareBtn) shareBtn.textContent = '🔗';
+  }
 }
 
 function showToast(msg) {
@@ -520,28 +537,49 @@ function showToast(msg) {
 
 let sharedTripData = null;
 
-function checkShareHash() {
-  const hash = location.hash;
-  if (!hash.startsWith('#share=')) return;
+async function checkShareParam() {
+  // 支援新版 ?trip=ID
+  const params = new URLSearchParams(location.search);
+  const binId  = params.get('trip');
 
-  try {
-    sharedTripData = decodeTrip(hash.slice('#share='.length));
-  } catch {
+  // 支援舊版 #share=encoded（向下相容）
+  const hash = location.hash;
+  if (!binId && hash.startsWith('#share=')) {
+    try {
+      sharedTripData = JSON.parse(decodeURIComponent(atob(hash.slice('#share='.length))));
+      _showSharedBanner();
+      history.replaceState(null, '', location.pathname);
+    } catch { /* 舊格式解析失敗，忽略 */ }
     return;
   }
 
-  // 顯示分享的行程
+  if (!binId) return;
+
+  try {
+    const res = await fetch(`${JSONBIN_URL}/${binId}/latest`, {
+      headers: { 'X-Master-Key': JSONBIN_KEY },
+    });
+    if (!res.ok) throw new Error('not found');
+    const data = await res.json();
+    sharedTripData = data.record;
+    _showSharedBanner();
+  } catch {
+    showToast('⚠️ 找不到行程，連結可能已失效');
+  } finally {
+    history.replaceState(null, '', location.pathname);
+  }
+}
+
+function _showSharedBanner() {
+  if (!sharedTripData) return;
   currentTrip = sharedTripData;
   currentDay  = 1;
   showScreen('screen-trip');
   renderTripDetail();
 
-  // 底部 Banner
   document.getElementById('share-banner-name').textContent =
     `${sharedTripData.emoji || '✈️'} ${sharedTripData.name}`;
   document.getElementById('share-banner').classList.remove('hidden');
-
-  history.replaceState(null, '', location.pathname);
 }
 
 function saveSharedTrip() {
@@ -592,4 +630,4 @@ if (!trips.length) {
 }
 
 renderHome();
-checkShareHash();
+checkShareParam();
